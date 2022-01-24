@@ -7,7 +7,7 @@ import pygame
 from functions import *
 
 pygame.init()
-SCREEN = WIDTH, HEIGHT = 640, 480
+SCREEN = WIDTH, HEIGHT = 288, 512
 
 info = pygame.display.Info()
 width = info.current_w
@@ -19,14 +19,13 @@ else:
     win = pygame.display.set_mode(SCREEN, pygame.NOFRAME | pygame.SCALED | pygame.FULLSCREEN)
 
 clock = pygame.time.Clock()
-FPS = 30
+FPS = 60
 
 BLACK = (18, 18, 18)
 WHITE = (217, 217, 217)
-RED = (255, 0, 0)
-GREEN = (0,177,64)
-GREEN2 = (0, 255, 0)
-BLUE = (30, 144,255)
+RED = (252, 91, 122)
+GREEN = (29, 161, 16)
+BLUE = (78, 193, 246)
 ORANGE = (252,76,2)
 YELLOW = (254,221,0)
 PURPLE = (155,38,182)
@@ -36,7 +35,7 @@ COLORS = [RED, GREEN, BLUE, ORANGE, YELLOW, PURPLE]
 
 font = pygame.font.SysFont('verdana', 12)
 
-origin = (80, 400)
+origin = (20, 340)
 radius = 250
 
 u = 50
@@ -55,15 +54,19 @@ class Projectile(pygame.sprite.Sprite):
         
         self.f = self.getTrajectory()
         self.range = self.x + abs(self.getRange())
-        self.time = self.timeOfFlight()
 
         self.path = []
 
     def timeOfFlight(self):
-        return (2 * self.u * math.sin(self.theta)) / g
+        return round((2 * self.u * math.sin(self.theta)) / g, 2)
 
     def getRange(self):
-        return ((self.u ** 2) * 2 * math.sin(self.theta) * math.cos(self.theta)) / g
+        range_ = ((self.u ** 2) * 2 * math.sin(self.theta) * math.cos(self.theta)) / g
+        return round(range_, 2)
+
+    def getMaxHeight(self):
+        h = ((self.u ** 2) * (math.sin(self.theta)) ** 2) / (2 * g)
+        return round(h, 2)
 
     def getTrajectory(self):
         return round(g /  (2 * (self.u ** 2) * (math.cos(self.theta) ** 2)), 4)
@@ -74,19 +77,17 @@ class Projectile(pygame.sprite.Sprite):
     def update(self):
         dx = 2
         if self.x >= self.range:
-            self.kill()
+            dx = 0
         self.x += dx
         self.ch = self.getProjectilePos(self.x - origin[0])
 
         self.path.append((self.x, self.y-abs(self.ch)))
-        self.path = self.path[-15:]
+        self.path = self.path[-50:]
 
         pygame.draw.circle(win, self.color, self.path[-1], 5)
-        for pos in self.path[:-1:3]:
+        pygame.draw.circle(win, WHITE, self.path[-1], 5, 1)
+        for pos in self.path[:-1:5]:
             pygame.draw.circle(win, WHITE, pos, 1)
-
-        # text = font.render(f"{self.ch}", True, GREEN)
-        # win.blit(text, (100, 450))
 
 projectile_group = pygame.sprite.Group()
 
@@ -110,6 +111,10 @@ while running:
             if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
                 running = False
 
+            if event.key == pygame.K_r:
+                projectile_group.empty()
+                currentp = None
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             clicked = True
 
@@ -131,26 +136,35 @@ while running:
                     end = getPosOnCircumeference(theta, origin)
                     arct = toRadian(theta)
     
-    pygame.draw.line(win, WHITE, origin, (origin[0] + 300, origin[1]), 2)
-    pygame.draw.line(win, WHITE, origin, (origin[0], origin[1] - 300), 2)
-    pygame.draw.line(win, BLUE, origin, end, 2)
+    pygame.draw.line(win, WHITE, origin, (origin[0] + 250, origin[1]), 2)
+    pygame.draw.line(win, WHITE, origin, (origin[0], origin[1] - 250), 2)
+    pygame.draw.line(win, AQUA, origin, end, 2)
+    pygame.draw.circle(win, WHITE, origin, 3)
     pygame.draw.arc(win, AQUA, arcrect, 0, -arct, 2)
 
     projectile_group.update()
 
     # Info
+    title = font.render("Projectile Motion", True, WHITE)
     fpstext = font.render(f"FPS : {int(clock.get_fps())}", True, WHITE)
     thetatext = font.render(f"Angle : {int(abs(theta))}", True, WHITE)
-    win.blit(fpstext, (WIDTH-150, 60))
-    win.blit(thetatext, (WIDTH-150, 80))
+    degreetext = font.render(f"{int(abs(theta))}°", True, YELLOW)
+    win.blit(title, (80, 30))
+    win.blit(fpstext, (20, 400))
+    win.blit(thetatext, (20, 420))
+    win.blit(degreetext, (origin[0]+38, origin[1]-20))
 
     if currentp:
-        timetext = font.render(f"Time : {int(currentp.timeOfFlight())}s", True, WHITE)
-        rangetext = font.render(f"Range : {int(currentp.getRange())}m", True, WHITE)
-        win.blit(timetext, (WIDTH-150, 140))
-        win.blit(rangetext, (WIDTH-150, 160))
+        veltext = font.render(f"Velocity : {currentp.u}m/s", True, WHITE)
+        timetext = font.render(f"Time : {currentp.timeOfFlight()}s", True, WHITE)
+        rangetext = font.render(f"Range : {currentp.getRange()}m", True, WHITE)
+        heighttext = font.render(f"Max Height : {currentp.getMaxHeight()}m", True, WHITE)
+        win.blit(veltext, (WIDTH-150, 400))
+        win.blit(timetext, (WIDTH-150, 420))
+        win.blit(rangetext, (WIDTH-150, 440))
+        win.blit(heighttext, (WIDTH-150, 460))
 
-    pygame.draw.rect(win, BLUE, (0, 0, WIDTH, HEIGHT), 2)
+    pygame.draw.rect(win, (0,0,0), (0, 0, WIDTH, HEIGHT), 5)
     clock.tick(FPS)
     pygame.display.update()
             

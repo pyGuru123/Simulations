@@ -1,6 +1,6 @@
 import math
 
-radius = 200
+radius = 160
 
 def toRadian(theta):
     return theta * math.pi / 180
