@@ -1,6 +1,7 @@
 # Projectile Motion
 
 import math
+import random
 import pygame
 
 from functions import *
@@ -18,7 +19,7 @@ else:
     win = pygame.display.set_mode(SCREEN, pygame.NOFRAME | pygame.SCALED | pygame.FULLSCREEN)
 
 clock = pygame.time.Clock()
-FPS = 45
+FPS = 30
 
 BLACK = (18, 18, 18)
 WHITE = (217, 217, 217)
@@ -31,54 +32,71 @@ YELLOW = (254,221,0)
 PURPLE = (155,38,182)
 AQUA = (0,103,127)
 
-font = pygame.font.SysFont('verdana', 11)
+COLORS = [RED, GREEN, BLUE, ORANGE, YELLOW, PURPLE]
+
+font = pygame.font.SysFont('verdana', 12)
 
 origin = (80, 400)
 radius = 250
-pos = None
 
-u = 10
+u = 50
 g = 9.8
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, u, theta, h=0):
+    def __init__(self, u, theta):
         super(Projectile, self).__init__()
 
         self.u = u
-        self.theta = toRadian(theta)
-        self.h = h
+        self.theta = toRadian(abs(theta))
         self.x, self.y = origin
-        self.f = self.getFlight()
-        print(math.tan(theta))
-        print(self.f)
+        self.color = random.choice(COLORS)
 
-        self.ux = u * math.cos(self.theta)
-        self.uy = u * math.sin(self.theta)
+        self.ch = 0
+        
+        self.f = self.getTrajectory()
+        self.range = self.x + abs(self.getRange())
+        self.time = self.timeOfFlight()
+
+        self.path = []
 
     def timeOfFlight(self):
-        return (2 * self.uy) / g
+        return (2 * self.u * math.sin(self.theta)) / g
 
-    def getFlight(self):
-        return round(g /  (2 * (self.u ** 2) * (math.cos(self.theta) ** 2)), 5)
+    def getRange(self):
+        return ((self.u ** 2) * 2 * math.sin(self.theta) * math.cos(self.theta)) / g
+
+    def getTrajectory(self):
+        return round(g /  (2 * (self.u ** 2) * (math.cos(self.theta) ** 2)), 4)
+
+    def getProjectilePos(self, x):
+        return x * math.tan(self.theta) - self.f * x ** 2
 
     def update(self):
-        self.x += 0.1
-        height = self.h
-        x = self.x * math.tan(self.theta)
-        y = self.f * x ** 2
-        self.y = (x - y)
+        dx = 2
+        if self.x >= self.range:
+            self.kill()
+        self.x += dx
+        self.ch = self.getProjectilePos(self.x - origin[0])
 
-        pygame.draw.circle(win, BLUE, (self.x, self.y), 3)
-        text = font.render(f"{self.x, self.y, self.f}", True, GREEN)
-        win.blit(text, (100, 450))
+        self.path.append((self.x, self.y-abs(self.ch)))
+        self.path = self.path[-15:]
 
-p = Projectile(6, 60)
-    # trajectory formula
-    # y = h + xtan(α) - gx²/2V₀²cos²(α)
+        pygame.draw.circle(win, self.color, self.path[-1], 5)
+        for pos in self.path[:-1:3]:
+            pygame.draw.circle(win, WHITE, pos, 1)
+
+        # text = font.render(f"{self.ch}", True, GREEN)
+        # win.blit(text, (100, 450))
 
 projectile_group = pygame.sprite.Group()
 
 clicked = False
+currentp = None
+
+theta = -30
+end = getPosOnCircumeference(theta, origin)
+arct = toRadian(theta)
+arcrect = pygame.Rect(origin[0]-30, origin[1]-30, 60, 60)
 
 running = True
 while running:
@@ -86,34 +104,51 @@ while running:
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            runninh = False
+            running = False
             
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
                 running = False
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if not clicked:
-                cliced = True
+            clicked = True
 
-            px, py = pos = event.pos
-            if px < 80 or py > 400:
-                pos = None
+        if event.type == pygame.MOUSEBUTTONUP:
+            clicked = False
 
-            if pos:
-                theta = getAngle(pos, origin)
+            pos = event.pos
+            theta = getAngle(pos, origin)
+            if -90 < theta <= 0:
                 projectile = Projectile(u, theta)
                 projectile_group.add(projectile)
+                currentp = projectile
+
+        if event.type == pygame.MOUSEMOTION:
+            if clicked:
+                pos = event.pos
+                theta = getAngle(pos, origin)
+                if -90 < theta <= 0:
+                    end = getPosOnCircumeference(theta, origin)
+                    arct = toRadian(theta)
     
     pygame.draw.line(win, WHITE, origin, (origin[0] + 300, origin[1]), 2)
     pygame.draw.line(win, WHITE, origin, (origin[0], origin[1] - 300), 2)
-
-    if pos:
-        position = font.render(f'{pos}, {theta}', True, GREEN)
-        win.blit(position, (pos[0] + 6, pos[1] - 6))
-        pygame.draw.circle(win, RED, pos, 5)
+    pygame.draw.line(win, BLUE, origin, end, 2)
+    pygame.draw.arc(win, AQUA, arcrect, 0, -arct, 2)
 
     projectile_group.update()
+
+    # Info
+    fpstext = font.render(f"FPS : {int(clock.get_fps())}", True, WHITE)
+    thetatext = font.render(f"Angle : {int(abs(theta))}", True, WHITE)
+    win.blit(fpstext, (WIDTH-150, 60))
+    win.blit(thetatext, (WIDTH-150, 80))
+
+    if currentp:
+        timetext = font.render(f"Time : {int(currentp.timeOfFlight())}s", True, WHITE)
+        rangetext = font.render(f"Range : {int(currentp.getRange())}m", True, WHITE)
+        win.blit(timetext, (WIDTH-150, 140))
+        win.blit(rangetext, (WIDTH-150, 160))
 
     pygame.draw.rect(win, BLUE, (0, 0, WIDTH, HEIGHT), 2)
     clock.tick(FPS)

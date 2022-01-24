@@ -1,5 +1,7 @@
 import math
 
+radius = 200
+
 def toRadian(theta):
     return theta * math.pi / 180
 
@@ -19,5 +21,11 @@ def getAngleFromGradient(gradient):
 def getAngle(pos, origin):
     m = getGradient(pos, origin)
     thetaRad = getAngleFromGradient(m)
-    theta = toDegrees(thetaRad)
-    return abs(theta)
+    theta = round(toDegrees(thetaRad), 2)
+    return theta
+
+def getPosOnCircumeference(theta, origin):
+    theta = toRadian(theta)
+    x = origin[0] + radius * math.cos(theta)
+    y = origin[1] + radius * math.sin(theta)
+    return (x, y)
