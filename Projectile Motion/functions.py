@@ -10,7 +10,7 @@ def toDegrees(theta):
 
 def getGradient(p1, p2):
     if p1[0] == p2[0]:
-        m = 1.5707963268
+        m = toRadian(90)
     else:
         m = (p2[1] - p1[1]) / (p2[0] - p1[0])
     return m

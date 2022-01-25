@@ -29,7 +29,7 @@ BLUE = (78, 193, 246)
 ORANGE = (252,76,2)
 YELLOW = (254,221,0)
 PURPLE = (155,38,182)
-AQUA = (0,103,127)
+AQUA = (0,249,182)
 
 COLORS = [RED, GREEN, BLUE, ORANGE, YELLOW, PURPLE]
 
@@ -51,6 +51,7 @@ class Projectile(pygame.sprite.Sprite):
         self.color = random.choice(COLORS)
 
         self.ch = 0
+        self.dx = 2
         
         self.f = self.getTrajectory()
         self.range = self.x + abs(self.getRange())
@@ -75,10 +76,9 @@ class Projectile(pygame.sprite.Sprite):
         return x * math.tan(self.theta) - self.f * x ** 2
 
     def update(self):
-        dx = 2
         if self.x >= self.range:
-            dx = 0
-        self.x += dx
+            self.dx = 0
+        self.x += self.dx
         self.ch = self.getProjectilePos(self.x - origin[0])
 
         self.path.append((self.x, self.y-abs(self.ch)))
@@ -144,7 +144,7 @@ while running:
 
     projectile_group.update()
 
-    # Info
+    # Info *******************************************************************
     title = font.render("Projectile Motion", True, WHITE)
     fpstext = font.render(f"FPS : {int(clock.get_fps())}", True, WHITE)
     thetatext = font.render(f"Angle : {int(abs(theta))}", True, WHITE)
