@@ -1,4 +1,6 @@
 import pygame
+import sys
+sys.setrecursionlimit(3000)
 
 pygame.init()
 SCREEN = WIDTH, HEIGHT = 288, 512
@@ -25,31 +27,40 @@ BLACK = (0, 0, 0)
 
 colors = [BLUE, RED, GREEN]
 
-# GAME ************************************************************************
+# TEXT ************************************************************************
 
-font = pygame.font.SysFont('arial', 16)
-text = font.render('Flood Fill Algo test#1', True, WHITE)
+font = pygame.font.SysFont('freesansbold', 26)
+text = font.render('Flood Fill Algo test', True, WHITE)
+
+# LOADING IMAGES **************************************************************
+clear = pygame.image.load('clear.png')
+clear = pygame.transform.scale(clear, (30, 30))
+clear_rect = clear.get_rect()
+clear_rect.x = WIDTH - 40
+clear_rect.y = HEIGHT - 60
 
 clicked = False
 polygon = []
 
 def floodfill(x, y, old, new):
-	if win.get_at((x, y)) != old:
+	pixel = win.get_at((x, y))
+	if pixel != old:
+		return
+	elif pixel == new:
 		return
 	else:
-		pygame.draw.circle(win, new, (x, y), 1)
+		print(x, y)
+		win.set_at((x, y), new)
 		pygame.display.update()
 
-		floodfill(x-1, y, old, new)
+		floodfill(x-2, y, old, new)
 		floodfill(x+1, y, old, new)
 		floodfill(x, y-1, old, new)
-		floodfill(x, y+1, old, new)
-		floodfill(x-1, y-1, old, new)
-		floodfill(x-1, y+1, old, new)
-		floodfill(x+1, y-1, old, new)
-		floodfill(x+1, y+1, old, new)
-
-color = RED
+		floodfill(x, y+2, old, new)
+		# floodfill(x-1, y-1, old, new)
+		# floodfill(x-1, y+1, old, new)
+		# floodfill(x+1, y-1, old, new)
+		# floodfill(x+1, y+1, old, new)
 
 class Rect:
 	def __init__(self, x, y, c):
@@ -66,6 +77,7 @@ r2 = Rect(WIDTH-40, 45, GREEN)
 r3 = Rect(WIDTH-40, 85, BLUE)
 
 rects = [r1, r2, r3]
+color = RED
 
 running = True
 while running:
@@ -78,7 +90,22 @@ while running:
 				running = False
 
 		if event.type == pygame.MOUSEBUTTONDOWN:
-			clicked = True
+			pos = event.pos
+			btn = pygame.mouse.get_pressed()
+			if btn[0]:
+				clicked = True
+
+			elif btn[2]:
+				if pos[0] < WIDTH - 50:
+					floodfill(pos[0], pos[1], (0,0,0), color)
+
+			if pos[0] > WIDTH - 50:
+				for r in rects:
+					if r.rect.collidepoint(pos):
+						color = r.c
+
+			if clear_rect.collidepoint(pos):
+				win.fill(BLACK)
 
 		if event.type == pygame.MOUSEBUTTONUP:
 			clicked = False
@@ -90,21 +117,12 @@ while running:
 				if btn[0]:
 					if pos[0] < WIDTH - 50:
 						pygame.draw.circle(win, WHITE, pos, 5)
-
-				elif btn[2]:
-					if pos[0] < WIDTH - 50:
-						floodfill(pos[0], pos[1], (0,0,0), color)
-
-				if pos[0] > WIDTH - 50:
-					for r in rects:
-						if r.rect.collidepoint(pos):
-							print(True)
-							color = rect.c
 				
 	pygame.draw.rect(win, WHITE, (0, 0, WIDTH-50, HEIGHT), 3)
 	pygame.draw.rect(win, WHITE, (WIDTH-50, 0, 50, HEIGHT), 2)
 
 	win.blit(text, (60, 40))
+	win.blit(clear, clear_rect)
 
 	for rect in rects:
 		rect.draw()
